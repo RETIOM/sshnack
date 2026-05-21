@@ -1,0 +1,102 @@
+PRAGMA foreign_keys = OFF;
+
+BEGIN TRANSACTION;
+
+DROP TABLE IF EXISTS stock_logs;
+DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS stock;
+DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS users;
+
+CREATE TABLE users (
+    USER_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    BALANCE REAL NOT NULL DEFAULT 0.00
+);
+
+CREATE TABLE items (
+    ITEM_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    NAME TEXT NOT NULL,
+    PRICE REAL NOT NULL
+);
+
+CREATE TABLE stock (
+    STOCK_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    ITEM_ID INTEGER NOT NULL,
+    QUANTITY INTEGER NOT NULL,
+    FOREIGN KEY (ITEM_ID) REFERENCES items(ITEM_ID)
+);
+
+CREATE TABLE transactions (
+    TRANSACTION_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    TYPE TEXT NOT NULL CHECK (TYPE IN ('purchase', 'deposit', 'withdrawal', 'refund')),
+    USER_ID INTEGER NOT NULL,
+    ITEM_ID INTEGER,
+    QUANTITY INTEGER,
+    TOTAL_AMOUNT REAL NOT NULL,
+    TRANSACTION_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (USER_ID) REFERENCES users(USER_ID),
+    FOREIGN KEY (ITEM_ID) REFERENCES items(ITEM_ID),
+    CHECK (
+        (TYPE = 'purchase' AND ITEM_ID IS NOT NULL AND QUANTITY > 0 AND TOTAL_AMOUNT < 0) OR
+        (TYPE = 'deposit' AND ITEM_ID IS NULL AND QUANTITY IS NULL AND TOTAL_AMOUNT > 0) OR
+        (TYPE = 'withdrawal' AND ITEM_ID IS NULL AND QUANTITY IS NULL AND TOTAL_AMOUNT < 0) OR
+        (TYPE = 'refund' AND ITEM_ID IS NOT NULL AND QUANTITY > 0 AND TOTAL_AMOUNT > 0)
+    )
+);
+
+CREATE TABLE stock_logs (
+    LOG_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    ITEM_ID INTEGER NOT NULL,
+    CHANGE_TYPE TEXT NOT NULL CHECK (CHANGE_TYPE IN ('addition', 'removal')),
+    QUANTITY_CHANGED INTEGER NOT NULL,
+    LOG_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ITEM_ID) REFERENCES items(ITEM_ID),
+    CHECK (
+        (CHANGE_TYPE = 'addition' AND QUANTITY_CHANGED > 0) OR
+        (CHANGE_TYPE = 'removal' AND QUANTITY_CHANGED < 0)
+    )
+);
+
+COMMIT;
+
+PRAGMA foreign_keys = ON;
+
+BEGIN TRANSACTION;
+
+INSERT INTO items (NAME, PRICE) VALUES 
+('Cola Classic', 1.50),
+('Diet Cola', 1.50),
+('Spring Water', 1.00),
+('Orange Juice', 2.25),
+('Potato Chips', 1.75),
+('Spicy Nacho Doritos', 1.75),
+('Chocolate Peanut Bar', 1.50),
+('Gummy Bears', 1.25),
+('Mixed Nuts', 2.00),
+('Protein Bar', 2.50);
+
+INSERT INTO stock (ITEM_ID, QUANTITY) VALUES
+(1, 15), 
+(2, 15), 
+(3, 20), 
+(4, 10), 
+(5, 12), 
+(6, 12), 
+(7, 24), 
+(8, 20), 
+(9, 10), 
+(10, 15);
+
+INSERT INTO stock_logs (ITEM_ID, CHANGE_TYPE, QUANTITY_CHANGED) VALUES
+(1, 'addition', 15), 
+(2, 'addition', 15), 
+(3, 'addition', 20), 
+(4, 'addition', 10),
+(5, 'addition', 12), 
+(6, 'addition', 12), 
+(7, 'addition', 24), 
+(8, 'addition', 20),
+(9, 'addition', 10), 
+(10, 'addition', 15);
+
+COMMIT;
