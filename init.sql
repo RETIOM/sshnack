@@ -9,51 +9,51 @@ DROP TABLE IF EXISTS items;
 DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
-    USER_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    BALANCE REAL NOT NULL DEFAULT 0.00
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    balance INTEGER NOT NULL DEFAULT 0 CHECK (balance >= 0)
 );
 
 CREATE TABLE items (
-    ITEM_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    NAME TEXT NOT NULL,
-    PRICE REAL NOT NULL
+    item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    price INTEGER NOT NULL
 );
 
 CREATE TABLE stock (
-    STOCK_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    ITEM_ID INTEGER NOT NULL,
-    QUANTITY INTEGER NOT NULL,
-    FOREIGN KEY (ITEM_ID) REFERENCES items(ITEM_ID)
+    slot_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity >= 0),
+    FOREIGN KEY (item_id) REFERENCES items(item_id)
 );
 
 CREATE TABLE transactions (
-    TRANSACTION_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    TYPE TEXT NOT NULL CHECK (TYPE IN ('purchase', 'deposit', 'withdrawal', 'refund')),
-    USER_ID INTEGER NOT NULL,
-    ITEM_ID INTEGER,
-    QUANTITY INTEGER,
-    TOTAL_AMOUNT REAL NOT NULL,
-    TRANSACTION_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (USER_ID) REFERENCES users(USER_ID),
-    FOREIGN KEY (ITEM_ID) REFERENCES items(ITEM_ID),
+    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL CHECK (type IN ('purchase', 'deposit', 'withdrawal', 'refund')),
+    user_id INTEGER NOT NULL,
+    item_id INTEGER,
+    quantity INTEGER,
+    total_amount INTEGER NOT NULL,
+    transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (item_id) REFERENCES items(item_id),
     CHECK (
-        (TYPE = 'purchase' AND ITEM_ID IS NOT NULL AND QUANTITY > 0 AND TOTAL_AMOUNT < 0) OR
-        (TYPE = 'deposit' AND ITEM_ID IS NULL AND QUANTITY IS NULL AND TOTAL_AMOUNT > 0) OR
-        (TYPE = 'withdrawal' AND ITEM_ID IS NULL AND QUANTITY IS NULL AND TOTAL_AMOUNT < 0) OR
-        (TYPE = 'refund' AND ITEM_ID IS NOT NULL AND QUANTITY > 0 AND TOTAL_AMOUNT > 0)
+        (type = 'purchase' AND item_id IS NOT NULL AND quantity > 0 AND total_amount < 0) OR
+        (type = 'deposit' AND item_id IS NULL AND quantity IS NULL AND total_amount > 0) OR
+        (type = 'withdrawal' AND item_id IS NULL AND quantity IS NULL AND total_amount < 0) OR
+        (type = 'refund' AND item_id IS NOT NULL AND quantity > 0 AND total_amount > 0)
     )
 );
 
 CREATE TABLE stock_logs (
-    LOG_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    ITEM_ID INTEGER NOT NULL,
-    CHANGE_TYPE TEXT NOT NULL CHECK (CHANGE_TYPE IN ('addition', 'removal')),
-    QUANTITY_CHANGED INTEGER NOT NULL,
-    LOG_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (ITEM_ID) REFERENCES items(ITEM_ID),
+    log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER NOT NULL,
+    change_type TEXT NOT NULL CHECK (change_type IN ('addition', 'removal')),
+    quantity_changed INTEGER NOT NULL,
+    log_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (item_id) REFERENCES items(item_id),
     CHECK (
-        (CHANGE_TYPE = 'addition' AND QUANTITY_CHANGED > 0) OR
-        (CHANGE_TYPE = 'removal' AND QUANTITY_CHANGED < 0)
+        (change_type = 'addition' AND quantity_changed > 0) OR
+        (change_type = 'removal' AND quantity_changed < 0)
     )
 );
 
@@ -63,40 +63,40 @@ PRAGMA foreign_keys = ON;
 
 BEGIN TRANSACTION;
 
-INSERT INTO items (NAME, PRICE) VALUES 
-('Cola Classic', 1.50),
-('Diet Cola', 1.50),
-('Spring Water', 1.00),
-('Orange Juice', 2.25),
-('Potato Chips', 1.75),
-('Spicy Nacho Doritos', 1.75),
-('Chocolate Peanut Bar', 1.50),
-('Gummy Bears', 1.25),
-('Mixed Nuts', 2.00),
-('Protein Bar', 2.50);
+INSERT INTO items (name, price) VALUES
+('Cola Classic', 150),
+('Diet Cola', 150),
+('Spring Water', 100),
+('Orange Juice', 225),
+('Potato Chips', 175),
+('Spicy Nacho Doritos', 175),
+('Chocolate Peanut Bar', 150),
+('Gummy Bears', 125),
+('Mixed Nuts', 200),
+('Protein Bar', 250);
 
-INSERT INTO stock (ITEM_ID, QUANTITY) VALUES
-(1, 15), 
-(2, 15), 
-(3, 20), 
-(4, 10), 
-(5, 12), 
-(6, 12), 
-(7, 24), 
-(8, 20), 
-(9, 10), 
+INSERT INTO stock (item_id, quantity) VALUES
+(1, 15),
+(2, 15),
+(3, 20),
+(4, 10),
+(5, 12),
+(6, 12),
+(7, 24),
+(8, 20),
+(9, 10),
 (10, 15);
 
-INSERT INTO stock_logs (ITEM_ID, CHANGE_TYPE, QUANTITY_CHANGED) VALUES
-(1, 'addition', 15), 
-(2, 'addition', 15), 
-(3, 'addition', 20), 
+INSERT INTO stock_logs (item_id, change_type, quantity_changed) VALUES
+(1, 'addition', 15),
+(2, 'addition', 15),
+(3, 'addition', 20),
 (4, 'addition', 10),
-(5, 'addition', 12), 
-(6, 'addition', 12), 
-(7, 'addition', 24), 
+(5, 'addition', 12),
+(6, 'addition', 12),
+(7, 'addition', 24),
 (8, 'addition', 20),
-(9, 'addition', 10), 
+(9, 'addition', 10),
 (10, 'addition', 15);
 
 COMMIT;
