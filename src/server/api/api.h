@@ -5,6 +5,7 @@
 
 typedef struct server_t {
     sqlite3 *db;
+    const char *admin_token;
 } server_t;
 
 typedef struct client_t {
@@ -12,7 +13,9 @@ typedef struct client_t {
     server_t *ctx;
 } client_t;
 
-void handleClient(void* c);
+void init_api(void);
+void destroy_api(void);
+void handle_client(void *c);
 
 
 #endif /* API_H */
