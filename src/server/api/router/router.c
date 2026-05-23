@@ -3,6 +3,7 @@
 #include "balance.h"
 #include "orders.h"
 #include "admin.h"
+#include "debug.h"
 #include <string.h>
 #include <sys/socket.h>
 
@@ -41,6 +42,11 @@ void init_router(void) {
         .patch = handle_post_update_price,
     };
     register_route("/items/:item_id", &items_handler);
+
+    static handler_t debug_handler = {
+        .get = handle_get_slow,
+    };
+    register_route("/debug/slow", &debug_handler);
 }
 
 void destroy_router(void) {

@@ -314,8 +314,6 @@ void app_handle_key(app_t *a, int key) {
     switch (key) {
         case KEY_LEFT:  move_horizontal(a, -1); break;
         case KEY_RIGHT: move_horizontal(a, +1); break;
-        case 'p':       move_horizontal(a, -1); break;
-        case 'n':       move_horizontal(a, +1); break;
         case KEY_UP:    move_vertical(a, -1);   break;
         case KEY_DOWN:  move_vertical(a, +1);   break;
         case '\n': case '\r': case KEY_ENTER: case ' ':
@@ -325,7 +323,7 @@ void app_handle_key(app_t *a, int key) {
         case 'r': app_refresh(a); snprintf(a->message, MSG_LEN, "Refreshed"); break;
         case 'q': a->running = false; break;
         case 's': if (a->admin) open_prompt(a, PROMPT_RESTOCK, "Restock qty:"); break;
-        case 'e': if (a->admin) open_prompt(a, PROMPT_PRICE, "New price (zl):"); break;
+        case 'p': if (a->admin) open_prompt(a, PROMPT_PRICE, "New price (zl):"); break;
         case 27:  if (a->admin) { a->admin = false; snprintf(a->message, MSG_LEN, "ADMIN locked"); } break;
         default: break;
     }
