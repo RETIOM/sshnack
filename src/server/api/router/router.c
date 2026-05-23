@@ -1,8 +1,8 @@
 #include "router.h"
-#include "handlers/products.h"
-#include "handlers/balance.h"
-#include "handlers/orders.h"
-#include "handlers/admin.h"
+#include "products.h"
+#include "balance.h"
+#include "orders.h"
+#include "admin.h"
 #include <string.h>
 #include <sys/socket.h>
 

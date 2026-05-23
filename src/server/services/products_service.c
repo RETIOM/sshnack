@@ -1,5 +1,5 @@
 #include "products_service.h"
-#include "../db/db.h"
+#include "db.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +11,6 @@ int products_list(sqlite3 *db, product_t **out, int *out_count) {
     const char *sql =
         "SELECT s.slot_id, s.item_id, i.name, i.price, s.quantity "
         "FROM stock s JOIN items i ON s.item_id = i.item_id "
-        "WHERE s.quantity > 0 "
         "ORDER BY s.slot_id;";
 
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);

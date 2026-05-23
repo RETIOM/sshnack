@@ -35,6 +35,9 @@
 *.i*86
 *.x86_64
 *.hex
+sshnack
+sshnack-server
+sshnack-tui
 
 # Debug files
 *.dSYM/
@@ -53,3 +56,9 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+claude
+docs
+
+# IDE / tooling
+.clangd

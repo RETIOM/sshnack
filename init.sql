@@ -75,17 +75,17 @@ INSERT INTO items (name, price) VALUES
 ('Mixed Nuts', 200),
 ('Protein Bar', 250);
 
-INSERT INTO stock (item_id, quantity) VALUES
-(1, 15),
-(2, 15),
-(3, 20),
-(4, 10),
-(5, 12),
-(6, 12),
-(7, 24),
-(8, 20),
-(9, 10),
-(10, 15);
+INSERT INTO stock (slot_id, item_id, quantity) VALUES
+(11, 1, 15),
+(12, 2, 15),
+(13, 3, 20),
+(14, 4, 10),
+(15, 5, 12),
+(21, 6, 12),
+(22, 7, 24),
+(23, 8, 20),
+(24, 9, 10),
+(25, 10, 15);
 
 INSERT INTO stock_logs (item_id, change_type, quantity_changed) VALUES
 (1, 'addition', 15),

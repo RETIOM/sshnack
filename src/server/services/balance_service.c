@@ -1,5 +1,5 @@
 #include "balance_service.h"
-#include "../db/db.h"
+#include "db.h"
 #include <stdio.h>
 
 int balance_get(sqlite3 *db, int user_id, int *out_balance_gr) {

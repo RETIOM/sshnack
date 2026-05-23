@@ -10,9 +10,9 @@
 
 // handleConnection?
 
-#include "db/db.h"
-#include "api/api.h"
-#include "threadpool/threadpool.h"
+#include "db.h"
+#include "api.h"
+#include "threadpool.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -118,7 +118,7 @@ int create_socket(int port, int maxClients) {
         return -1;
     }
 
-    // Allows for quick rebinding after reboot
+    // allows for quick rebinding after reboot
     int on = 1;
     if (setsockopt(serverSock, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0) {
         perror("listen setsockopt failed");

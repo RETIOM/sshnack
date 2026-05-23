@@ -1,5 +1,5 @@
 #include "orders_service.h"
-#include "../db/db.h"
+#include "db.h"
 #include <stdio.h>
 
 int orders_purchase(sqlite3 *db, int user_id, int slot_id) {
