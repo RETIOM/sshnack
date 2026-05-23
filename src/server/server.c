@@ -47,13 +47,22 @@ int main(int argc, char* argv[]) {
     sa.sa_flags = 0; /* no SA_RESTART — accept() must be interruptible */
     sigaction(SIGINT, &sa, NULL);
 
+    const char *admin_token = getenv("SSHNACK_ADMIN_TOKEN");
+    if (!admin_token) {
+        admin_token = "admin";
+        fprintf(stderr, "SSHNACK_ADMIN_TOKEN not set, using default\n");
+    }
+
     server_t server;
 
-    server.db = initDB();
+    server.db          = db_init();
+    server.admin_token = admin_token;
     if (!server.db) {
         perror("db init failed");
         return -1;
     }
+
+    init_api();
 
     tpool_t *tm = tpool_create(MAX);
     if (!tm) {
@@ -84,7 +93,7 @@ int main(int argc, char* argv[]) {
         client->sock = clientSock;
         client->ctx = &server;
 
-        if (!tpool_add_work(tm, handleClient, client)) {
+        if (!tpool_add_work(tm, handle_client, client)) {
             perror("failed to handle client");
             continue;
         }
@@ -94,7 +103,8 @@ int main(int argc, char* argv[]) {
 
     close(serverSock);
     tpool_destroy(tm);
-    closeDB(server.db);
+    destroy_api();
+    db_close(server.db);
     
     return 0;
 }
