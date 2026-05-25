@@ -1,10 +1,10 @@
 #include "db.h"
 #include <stdio.h>
 
-sqlite3 *db_init(void) {
+sqlite3 *db_init(const char *path) {
     sqlite3 *db;
 
-    int rc = sqlite3_open("sshnack.db", &db);
+    int rc = sqlite3_open(path ? path : "sshnack.db", &db);
     if (rc != SQLITE_OK) {
         fprintf(stderr, "db_init: failed to open: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);

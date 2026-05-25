@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -53,9 +54,17 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "SSHNACK_ADMIN_TOKEN not set, using default\n");
     }
 
+    const char *db_path = getenv("SSHNACK_DB_PATH");
+    for (int i = 1; i < argc - 1; i++) {
+        if (strcmp(argv[i], "--db") == 0) {
+            db_path = argv[i + 1];
+            break;
+        }
+    }
+
     server_t server;
 
-    server.db          = db_init();
+    server.db          = db_init(db_path);
     server.admin_token = admin_token;
     if (!server.db) {
         perror("db init failed");

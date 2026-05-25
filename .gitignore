@@ -39,6 +39,9 @@ sshnack
 sshnack-server
 sshnack-tui
 
+# build output
+/bin/
+
 # Debug files
 *.dSYM/
 *.su

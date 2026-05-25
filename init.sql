@@ -10,7 +10,6 @@ DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username VARCHAR(32),
     fingerprint TEXT UNIQUE,
     balance INTEGER NOT NULL DEFAULT 0 CHECK (balance >= 0)
 );

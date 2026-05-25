@@ -13,7 +13,7 @@ typedef struct {
     int stock_qty;
 } product_t;
 
-sqlite3 *db_init(void);
+sqlite3 *db_init(const char *path);
 void     db_close(sqlite3 *db);
 
 int db_log_cash_transaction(sqlite3 *db, int user_id, int amount_gr, const char *type);

@@ -1,2 +1,0 @@
-- [ ] Add username support to both DB and TUI(mainly here)
-- [ ] in ssh module make it so the user is identified via lookup of their public key fingerprint and name

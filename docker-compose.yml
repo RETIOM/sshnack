@@ -1,0 +1,28 @@
+services:
+  sshnack-ssh:
+    build:
+      context: .
+      dockerfile: ssh/Dockerfile
+    ports:
+      - "2222:22"
+    environment:
+      - SSHNACK_SERVER_URL=http://sshnack-server:8080
+    networks:
+      - sshnack
+  sshnack-server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - sshnack-data:/data
+    networks:
+      - sshnack
+
+volumes:
+  sshnack-data:
+
+networks:
+  sshnack:
+    driver: bridge

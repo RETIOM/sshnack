@@ -4,6 +4,7 @@
 #include "orders.h"
 #include "admin.h"
 #include "debug.h"
+#include "users.h"
 #include <string.h>
 #include <sys/socket.h>
 
@@ -47,6 +48,11 @@ void init_router(void) {
         .get = handle_get_slow,
     };
     register_route("/debug/slow", &debug_handler);
+
+    static handler_t user_lookup_handler = {
+        .post = handle_lookup_user,
+    };
+    register_route("/users/lookup", &user_lookup_handler);
 }
 
 void destroy_router(void) {
