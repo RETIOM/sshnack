@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 import os
 import sys
+import time
 
 import requests
+
+# Retry the lookup a few times so a freshly started (still-waking) server gets
+# a chance to come up before we give up on resolving the user.
+MAX_ATTEMPTS = 5
+RETRY_DELAY = 2
 
 user = sys.argv[1]
 key_type = sys.argv[2]
@@ -24,21 +30,23 @@ if not server_url:
 
 cmd = ""
 if server_url is not None:
-    try:
-        r = requests.post(
-            server_url + "/users/lookup",
-            json={"fingerprint": key_fingerprint},
-            timeout=5,
-        )
-        if r.status_code == 200:
-            user_id = r.json()["user_id"]
-            cmd = f"--user {user_id}"
-        else:
-            print(f"users lookup failed: status {r.status_code}", file=sys.stderr)
-            cmd = ""
-    except (requests.RequestException, ValueError, KeyError) as exc:
-        print(f"users lookup failed: {exc}", file=sys.stderr)
-        cmd = ""
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            r = requests.post(
+                server_url + "/users/lookup",
+                json={"fingerprint": key_fingerprint},
+                timeout=5,
+            )
+            r.raise_for_status()
+            cmd = f"--user {r.json()['user_id']}"
+            break
+        except (requests.RequestException, ValueError, KeyError) as exc:
+            print(
+                f"users lookup failed (attempt {attempt}/{MAX_ATTEMPTS}): {exc}",
+                file=sys.stderr,
+            )
+            if attempt < MAX_ATTEMPTS:
+                time.sleep(RETRY_DELAY)
 
 # Made to look like authorized_keys entry(prints back the same addres it was given to actually permit entry)
 keys = (
