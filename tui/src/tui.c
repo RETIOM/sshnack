@@ -14,7 +14,6 @@ typedef struct {
 
 static void load_config(int argc, char **argv, config_t *cfg) {
     strncpy(cfg->base_url, "http://127.0.0.1:8080", sizeof(cfg->base_url) - 1);
-    // strncpy(cfg->base_url, "http://host.docker.internal:8080", sizeof(cfg->base_url) - 1);
     cfg->base_url[sizeof(cfg->base_url) - 1] = '\0';
     cfg->user_id = 67;
     strncpy(cfg->admin_token, "admin", sizeof(cfg->admin_token) - 1);
