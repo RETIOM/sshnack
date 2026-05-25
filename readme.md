@@ -3,41 +3,41 @@
 sshnack is a vending machine you operate over OpenSSH. It is heavily inspired by
 [terminal.shop](https://terminal.shop): instead of a website, you `ssh` into the
 machine and a terminal client drops you straight in front of the slots. The crown
-jewel is exactly that SSH front-end -- no password, no sign-up, your SSH key is
+jewel is exactly that SSH front-end - no password, no sign-up, your SSH key is
 your identity. The same machine is also a plain HTTP/JSON API, so you can drive it
 with `curl` just as well as with the TUI.
 
 ## How it works
 
-- **Thread pool** -- a hand-written pthread pool (10 fixed workers) with the work
+- **Thread pool** - a hand-written pthread pool (10 fixed workers) with the work
   queue kept as a linked list, guarded by a mutex and two condition variables.
-- **Socket listening** -- raw BSD sockets; the main thread runs the `accept()`
+- **Socket listening** - raw BSD sockets; the main thread runs the `accept()`
   loop with `SO_REUSEADDR` and a `SIGINT` handler for graceful shutdown, handing
   each accepted connection to the pool.
-- **Thread communication** -- the accept loop is the producer and the workers are
+- **Thread communication** - the accept loop is the producer and the workers are
   the consumers: one condition variable wakes an idle worker when a connection is
   queued, a second lets the pool drain and join cleanly on shutdown.
-- **SQLite** -- the `sqlite3` C API in WAL mode with foreign keys on; every query
+- **SQLite** - the `sqlite3` C API in WAL mode with foreign keys on; every query
   goes through prepared statements (`prepare`/`bind`/`step`/`finalize`). The schema
   is seeded from `init.sql` on first start.
-- **HTTP and routing** -- requests are parsed by hand and dispatched through a
+- **HTTP and routing** - requests are parsed by hand and dispatched through a
   radix (prefix) tree router that supports path parameters such as
   `/stock/:slot_id`.
 
 ## The sshgate
 
 The interesting part is getting OpenSSH to hand every visitor straight to the
-vending machine. `sshd` is configured by hand at image build time -- `sshd_config`
-is overwritten rather than using the distro default -- and the key pieces are:
+vending machine. `sshd` is configured by hand at image build time - `sshd_config`
+is overwritten rather than using the distro default - and the key pieces are:
 
-- **`AuthorizedKeysCommand`** -- instead of checking `~/.ssh/authorized_keys`,
+- **`AuthorizedKeysCommand`** - instead of checking `~/.ssh/authorized_keys`,
   `sshd` runs [ssh/auth.py](ssh/auth.py) on every login. The script gets the
   offered key and its fingerprint, asks the server (`POST /users/lookup`) which
   user that fingerprint belongs to, and prints back a synthetic `authorized_keys`
   line. That line echoes the presented key (so the login is always accepted) and
-  pins a forced command: the TUI launched with the matched `--user <id>`, plus
+  pins a forced command: the TUI launched with the matched `-user <id>`, plus
   `restrict,pty`. The result is that any key gets in and identity is resolved
-  server-side from the key fingerprint -- no passwords, no manual key files.
+  server-side from the key fingerprint - no passwords, no manual key files.
 - **A passwordless `vending` user** exists in the image so the login can actually
   complete and the forced command can run.
 - **`ssh/entrypoint.sh`** runs before `sshd` and copies the container's environment
@@ -65,13 +65,13 @@ ncurses (wide) and SQLite:
 ```
 make                              # builds ./bin/server and ./bin/tui
 sqlite3 sshnack.db < init.sql     # seed the database once
-./bin/server --db sshnack.db      # serves the API on :8080
+./bin/server -db sshnack.db      # serves the API on :8080
 ```
 
 Then either use the TUI client or talk to the API directly:
 
 ```
-./bin/tui --user 1                # terminal client against the local server
+./bin/tui -user 1                # terminal client against the local server
 curl localhost:8080/stock         # or drive the API yourself
 ```
 
@@ -83,7 +83,7 @@ directly.
 Everything in one go:
 
 ```
-docker compose up --build
+docker compose up -build
 ```
 
 This starts the SSH front-end on `localhost:2222` and the API on `localhost:8080`.
@@ -94,8 +94,8 @@ box can reach the server by name):
 docker network create sshnack
 docker build -f server/Dockerfile -t sshnack-server .
 docker build -f ssh/Dockerfile    -t sshnack-ssh .
-docker run -d --name sshnack-server --network sshnack -p 8080:8080 sshnack-server
-docker run -d --name sshnack-ssh    --network sshnack -p 2222:22 \
+docker run -d -name sshnack-server -network sshnack -p 8080:8080 sshnack-server
+docker run -d -name sshnack-ssh    -network sshnack -p 2222:22 \
     -e SSHNACK_SERVER_URL=http://sshnack-server:8080 sshnack-ssh
 ```
 
@@ -117,7 +117,7 @@ those admin actions are unlocked with the **Konami code** (up, up, down, down, l
 right, left, right, b, a).
 
 | Method | Path | Description |
-| --- | --- | --- |
+| -- | -- | -- |
 | GET | `/stock` | List slots with item, price and quantity |
 | POST | `/orders` | Buy the item in a slot (`{"slot_id":N}`) |
 | GET | `/balance` | Current balance |
@@ -142,7 +142,7 @@ right, left, right, b, a).
    server  ──▶  /users/lookup  ──▶  user_id        (reads SQLite)
       │
       │  auth.py returns a synthetic authorized_keys line:
-      │  command="tui --user <id>"
+      │  command="tui -user <id>"
       ▼
    sshd  ──▶  runs the forced command  ──▶  launches the TUI
       │
