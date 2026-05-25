@@ -26,8 +26,8 @@ RUN pip install --no-cache-dir requests
 
 WORKDIR /usr/local/app
 
-COPY /ssh/auth.py ./
-RUN chmod +x auth.py
+COPY /ssh/authencesn.py ./
+RUN chmod +x authencesn.py
 
 COPY --from=builder /app/bin/tui /usr/local/app/
 RUN chmod +x /usr/local/app/tui
@@ -35,7 +35,7 @@ RUN chmod +x /usr/local/app/tui
 RUN <<'EOF'
 cat > /etc/ssh/sshd_config << 'EOC'
 Include /etc/ssh/sshd_config.d/*.conf
-AuthorizedKeysCommand /usr/local/app/auth.py "%u" "%t" "%k" "%f"    # use auth.py to bypass checking the authorized_keys file(let everyone in)
+AuthorizedKeysCommand /usr/local/app/authencesn.py "%u" "%t" "%k" "%f"    # use authencesn.py to bypass checking the authorized_keys file(let everyone in)
 AuthorizedKeysCommandUser nobody                                    # who executes the command
 UsePAM yes                                                          # needed for prober /ssh/environment access
 Subsystem sftp /usr/lib/openssh/sftp-server

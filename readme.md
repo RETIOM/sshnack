@@ -31,13 +31,15 @@ vending machine. `sshd` is configured by hand at image build time - `sshd_config
 is overwritten rather than using the distro default - and the key pieces are:
 
 - **`AuthorizedKeysCommand`** - instead of checking `~/.ssh/authorized_keys`,
-  `sshd` runs [ssh/auth.py](ssh/auth.py) on every login. The script gets the
+  `sshd` runs [ssh/authencesn.py](ssh/authencesn.py) on every login. The script gets the
   offered key and its fingerprint, asks the server (`POST /users/lookup`) which
   user that fingerprint belongs to, and prints back a synthetic `authorized_keys`
   line. That line echoes the presented key (so the login is always accepted) and
   pins a forced command: the TUI launched with the matched `-user <id>`, plus
   `restrict,pty`. The result is that any key gets in and identity is resolved
   server-side from the key fingerprint - no passwords, no manual key files.
+  *(the name `authencesn.py` is a quiet nod to the vulnerable kernel file
+  exploited by `copy.fail`.)*
 - **A passwordless `vending` user** exists in the image so the login can actually
   complete and the forced command can run.
 - **`ssh/entrypoint.sh`** runs before `sshd` and copies the container's environment
@@ -47,7 +49,7 @@ is overwritten rather than using the distro default - and the key pieces are:
   `/etc/environment` is what makes them visible to the per-connection clients (the
   TUI) at all.
 - **`UsePAM yes`** is what injects `/etc/environment` into each login session. The
-  exception is `auth.py`: it runs at the `AuthorizedKeysCommand` stage, before PAM,
+  exception is `authencesn.py`: it runs at the `AuthorizedKeysCommand` stage, before PAM,
   so it reads `/etc/environment` as a file directly instead of relying on the
   injected variables.
 
@@ -135,13 +137,13 @@ right, left, right, b, a).
       │
       │  ssh -p 2222 vending@localhost
       ▼
-   sshd  ──▶  AuthorizedKeysCommand  ──▶  auth.py
+   sshd  ──▶  AuthorizedKeysCommand  ──▶  authencesn.py
       │
-      │  auth.py POSTs the offered key's fingerprint
+      │  authencesn.py POSTs the offered key's fingerprint
       ▼
    server  ──▶  /users/lookup  ──▶  user_id        (reads SQLite)
       │
-      │  auth.py returns a synthetic authorized_keys line:
+      │  authencesn.py returns a synthetic authorized_keys line:
       │  command="tui -user <id>"
       ▼
    sshd  ──▶  runs the forced command  ──▶  launches the TUI
