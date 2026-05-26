@@ -76,7 +76,7 @@ is overwritten rather than using the distro default - and the key pieces are:
   so it reads `/etc/environment` as a file directly instead of relying on the
   injected variables.
 
-_Approach based on [this](https://drewdevault.com/blog/Interactive-SSH-programs/) blog post_
+_Approach based on [this](https://drewdevault.com/blog/Interactive-SSH-programs/) blog post and [this](https://github.com/charmbracelet/wish) repository_
 
 ## Usage
 
