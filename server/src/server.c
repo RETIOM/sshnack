@@ -28,11 +28,11 @@ typedef struct {
     int port;
     int internal_port;
     int num_workers;
-    int max_clients;
+    int backlog;
 } config_t;
 
 static void load_config(int argc, char *argv[], config_t *cfg);
-static int  create_socket(const char *addr, int port, int max_clients);
+static int  create_socket(const char *addr, int port, int backlog);
 void handle_sigint(int sig) { keep_running = 0; }
 
 
@@ -63,8 +63,8 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    int public_sock = create_socket("0.0.0.0", config.port, config.max_clients);
-    int internal_sock = create_socket("0.0.0.0", config.internal_port, config.max_clients);
+    int public_sock = create_socket("0.0.0.0", config.port, config.backlog);
+    int internal_sock = create_socket("0.0.0.0", config.internal_port, config.backlog);
     if (public_sock < 0 || internal_sock < 0) {
         fprintf(stderr, "socket init failed\n");
         return -1;
@@ -190,18 +190,18 @@ static void load_config(int argc, char *argv[], config_t *cfg) {
         cfg->num_workers = default_workers;
     }
 
-    const int default_max_clients = 10;
-    const char *env_max_clients = getenv("SSHNACK_MAX_CLIENTS");
-    if (env_max_clients) {
-        int v = atoi(env_max_clients);
+    const int default_backlog = 10;
+    const char *env_backlog = getenv("SSHNACK_BACKLOG");
+    if (env_backlog) {
+        int v = atoi(env_backlog);
         if (v > 0) {
-            cfg->max_clients = v;
+            cfg->backlog = v;
         } else {
-            fprintf(stderr, "invalid SSHNACK_MAX_CLIENTS value '%s', falling back on default: %d\n", env_max_clients, default_max_clients);
-            cfg->max_clients = default_max_clients;
+            fprintf(stderr, "invalid SSHNACK_BACKLOG value '%s', falling back on default: %d\n", env_backlog, default_backlog);
+            cfg->backlog = default_backlog;
         }
     } else {
-        cfg->max_clients = default_max_clients;
+        cfg->backlog = default_backlog;
     }
 
     for (int i = 1; i < argc - 1; i++) {
@@ -239,12 +239,12 @@ static void load_config(int argc, char *argv[], config_t *cfg) {
                 fprintf(stderr, "invalid --num-workers value '%s', falling back on default: %d\n", argv[i + 1], cfg->num_workers);
             }
             continue;
-        } else if (strcmp(argv[i], "--max-clients") == 0) {
+        } else if (strcmp(argv[i], "--backlog") == 0) {
             int v = atoi(argv[i + 1]);
             if (v > 0) {
-                cfg->max_clients = v;
+                cfg->backlog = v;
             } else {
-                fprintf(stderr, "invalid --max-clients value '%s', falling back on default: %d\n", argv[i + 1], cfg->max_clients);
+                fprintf(stderr, "invalid --backlog value '%s', falling back on default: %d\n", argv[i + 1], cfg->backlog);
             }
         }
     }
@@ -255,7 +255,7 @@ static void load_config(int argc, char *argv[], config_t *cfg) {
         fprintf(stderr, "SSHNACK_DB_PATH(--db) not set, using default: %s\n", default_db_path);
 }
 
-static int create_socket(const char *addr, int port, int max_clients) {
+static int create_socket(const char *addr, int port, int backlog) {
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
         fprintf(stderr, "socket creation failed: %s\n", strerror(errno));
@@ -280,7 +280,7 @@ static int create_socket(const char *addr, int port, int max_clients) {
         return -1;
     }
 
-    if (listen(sock, max_clients) < 0) {
+    if (listen(sock, backlog) < 0) {
         fprintf(stderr, "failed to listen: %s\n", strerror(errno));
         return -1;
     }

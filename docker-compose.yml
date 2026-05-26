@@ -28,7 +28,7 @@ services:
       - SSHNACK_PORT=8080
       - SSHNACK_INTERNAL_PORT=8081
       - SSHNACK_NUM_WORKERS=4
-      - SSHNACK_MAX_CLIENTS=10
+      - SSHNACK_BACKLOG=10
       - SSHNACK_REINIT_DB=1
     networks:
       - sshnack
