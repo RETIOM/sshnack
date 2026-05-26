@@ -5,7 +5,7 @@
 
 typedef struct Node node_t;
 
-typedef struct RadixTree {
+typedef struct radix_tree {
     node_t *root;
     char delimeter;
     char wildcard;

@@ -63,16 +63,16 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    int publicSock = create_socket("0.0.0.0", config.port, config.max_clients);
-    int internalSock = create_socket("0.0.0.0", config.internal_port, config.max_clients);
-    if (publicSock < 0 || internalSock < 0) {
+    int public_sock = create_socket("0.0.0.0", config.port, config.max_clients);
+    int internal_sock = create_socket("0.0.0.0", config.internal_port, config.max_clients);
+    if (public_sock < 0 || internal_sock < 0) {
         fprintf(stderr, "socket init failed\n");
         return -1;
     }
 
     struct pollfd fds[2] = {
-        { .fd = publicSock,   .events = POLLIN },
-        { .fd = internalSock, .events = POLLIN },
+        { .fd = public_sock,   .events = POLLIN },
+        { .fd = internal_sock, .events = POLLIN },
     };
 
     while (keep_running) {
@@ -86,9 +86,9 @@ int main(int argc, char* argv[]) {
         for (int i = 0; i < 2; i++) {
             if (!(fds[i].revents & POLLIN)) continue;
 
-            socklen_t clientLen = sizeof(clientAddr);
-            int clientSock = accept(fds[i].fd, (struct sockaddr *)&clientAddr, &clientLen);
-            if (clientSock < 0) {
+            socklen_t client_len = sizeof(clientAddr);
+            int client_sock = accept(fds[i].fd, (struct sockaddr *)&clientAddr, &client_len);
+            if (client_sock < 0) {
                 fprintf(stderr, "could not accept client: %s\n", strerror(errno));
                 continue;
             }
@@ -96,11 +96,11 @@ int main(int argc, char* argv[]) {
             client_t *client = malloc(sizeof(client_t));
             if (!client) {
                 fprintf(stderr, "failed to create client: %s\n", strerror(errno));
-                close(clientSock);
+                close(client_sock);
                 continue;
             }
 
-            client->sock = clientSock;
+            client->sock = client_sock;
             client->internal = (i == 1);
             client->ctx = &server;
 
@@ -112,8 +112,8 @@ int main(int argc, char* argv[]) {
 
     printf("\nShutting down gracefully...\n");
 
-    close(publicSock);
-    close(internalSock);
+    close(public_sock);
+    close(internal_sock);
     tpool_destroy(tm);
     destroy_api();
     db_close(server.db);
