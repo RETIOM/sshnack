@@ -155,11 +155,11 @@ void ui_render(const app_t *a) {
 
     draw_title();
 
-    int admin_row  = LINES - 4;
+    int admin_row = LINES - 4;
     int status_row = LINES - 3;
     int detail_row = LINES - 2;
-    int guide_row  = LINES - 1;
-    int title_h    = 3;
+    int guide_row = LINES - 1;
+    int title_h = 3;
 
     if (a->count == 0) {
         draw_centered(LINES / 2, "Machine empty");
@@ -173,8 +173,8 @@ void ui_render(const app_t *a) {
             if (c < minc) minc = c;
             if (c > maxc) maxc = c;
         }
-        int rows   = maxr - minr + 1;
-        int colsn  = maxc - minc + 1;
+        int rows = maxr - minr + 1;
+        int colsn = maxc - minc + 1;
         int grid_w = colsn * CELL_W + (colsn - 1) * GAP_X;
         int grid_h = rows * CELL_H;
         int avail_h = admin_row - title_h;

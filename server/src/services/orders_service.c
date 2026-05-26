@@ -30,8 +30,8 @@ int orders_purchase(sqlite3 *db, int user_id, int slot_id) {
         sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
         return -1;
     }
-    item_id  = sqlite3_column_int(stmt, 0);
-    price    = sqlite3_column_int(stmt, 1);
+    item_id = sqlite3_column_int(stmt, 0);
+    price = sqlite3_column_int(stmt, 1);
     quantity = sqlite3_column_int(stmt, 2);
     sqlite3_finalize(stmt);
 

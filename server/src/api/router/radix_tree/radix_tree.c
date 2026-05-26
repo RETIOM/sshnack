@@ -27,7 +27,7 @@ radix_tree_t *init_tree(char delimeter, char wildcard) {
     }
 
     tree->delimeter = delimeter;
-    tree->wildcard  = wildcard;
+    tree->wildcard = wildcard;
 
     node_t *root = create_node("", NULL);
     if (!root) {

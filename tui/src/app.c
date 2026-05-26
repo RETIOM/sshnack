@@ -33,9 +33,9 @@ void app_fmt_money(int gr, char *buf, size_t n) {
 
 void app_init(app_t *a, api_client_t *client) {
     memset(a, 0, sizeof(*a));
-    a->client  = client;
+    a->client = client;
     a->running = true;
-    a->mode    = MODE_BROWSE;
+    a->mode = MODE_BROWSE;
     a->pending = PROMPT_NONE;
     app_refresh(a);
     a->message[0] = '\0';
@@ -44,7 +44,7 @@ void app_init(app_t *a, api_client_t *client) {
 void app_free(app_t *a) {
     free(a->products);
     a->products = NULL;
-    a->count    = 0;
+    a->count = 0;
 }
 
 void app_refresh(app_t *a) {
@@ -56,7 +56,7 @@ void app_refresh(app_t *a) {
     if (st == API_OK) {
         free(a->products);
         a->products = prods;
-        a->count    = n;
+        a->count = n;
         if (a->selected >= a->count) a->selected = a->count > 0 ? a->count - 1 : 0;
     } else {
         set_status(a, st, "stock");
@@ -153,7 +153,7 @@ static void open_prompt(app_t *a, prompt_action_t action, const char *label) {
         snprintf(a->message, MSG_LEN, "No slot selected");
         return;
     }
-    a->mode    = MODE_PROMPT;
+    a->mode = MODE_PROMPT;
     a->pending = action;
     strncpy(a->prompt_label, label, PROMPT_LABEL_LEN - 1);
     a->prompt_label[PROMPT_LABEL_LEN - 1] = '\0';
@@ -276,7 +276,7 @@ static void confirm_prompt(app_t *a) {
         }
     }
 
-    a->mode    = MODE_BROWSE;
+    a->mode = MODE_BROWSE;
     a->pending = PROMPT_NONE;
     a->prompt_buf[0] = '\0';
     if (!a->server_down) app_refresh(a);
@@ -305,7 +305,7 @@ void app_handle_key(app_t *a, int key) {
         } else if (((key >= '0' && key <= '9') || key == '.') &&
                    strlen(a->prompt_buf) < PROMPT_BUF_LEN - 1) {
             size_t l = strlen(a->prompt_buf);
-            a->prompt_buf[l]     = (char)key;
+            a->prompt_buf[l] = (char)key;
             a->prompt_buf[l + 1] = '\0';
         }
         return;

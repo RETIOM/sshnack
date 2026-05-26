@@ -19,10 +19,7 @@
 
 volatile sig_atomic_t keep_running = 1;
 
-
 struct sockaddr_in serverAddr, clientAddr;
-
-
 
 
 int create_socket(int port, int maxClients);
@@ -52,10 +49,10 @@ int main(int argc, char* argv[]) {
 
     server_t server;
 
-    server.db          = db_init(db_path);
+    server.db = db_init(db_path);
     server.admin_token = admin_token;
     if (!server.db) {
-        perror("db init failed");
+        fprintf(stderr, "db init failed\n");
         return -1;
     }
 
@@ -63,13 +60,13 @@ int main(int argc, char* argv[]) {
 
     tpool_t *tm = tpool_create(MAX);
     if (!tm) {
-        perror("threadpool init failed");
+        fprintf(stderr, "threadpool init failed\n");
         return -1;
     }
 
     int serverSock = create_socket(PORT, MAX), clientSock;
     if (serverSock < 0) {
-        perror("socket init failed");
+        fprintf(stderr, "socket init failed\n");
         return -1;
     }
 
@@ -77,13 +74,13 @@ int main(int argc, char* argv[]) {
         socklen_t clientLen = sizeof(clientAddr);
         if ((clientSock = accept(serverSock, (struct sockaddr *)&clientAddr, &clientLen)) < 0) {
             if (errno == EINTR) continue;
-            perror("could not accept client");
+            fprintf(stderr, "could not accept client: %s\n", strerror(errno));
             continue;
         }
 
         client_t *client = (client_t *)malloc(sizeof(client_t));
         if (!client) {
-            perror("failed to create client");
+            fprintf(stderr, "failed to create client: %s\n", strerror(errno));
             continue;
         }
 
@@ -91,7 +88,7 @@ int main(int argc, char* argv[]) {
         client->ctx = &server;
 
         if (!tpool_add_work(tm, handle_client, client)) {
-            perror("failed to handle client");
+            fprintf(stderr, "failed to handle client\n");
             continue;
         }
     }
@@ -111,14 +108,14 @@ int create_socket(int port, int maxClients) {
 
     serverSock = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSock < 0) {
-        perror("socket creation failed");
+        fprintf(stderr, "socket creation failed: %s\n", strerror(errno));
         return -1;
     }
 
     // allows for quick rebinding after reboot
     int on = 1;
     if (setsockopt(serverSock, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0) {
-        perror("listen setsockopt failed");
+        fprintf(stderr, "listen setsockopt failed: %s\n", strerror(errno));
         return -1;
     }
 
@@ -127,12 +124,12 @@ int create_socket(int port, int maxClients) {
     serverAddr.sin_port = htons(port);
 
     if (bind(serverSock, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
-        perror("failed to bind");
+        fprintf(stderr, "failed to bind: %s\n", strerror(errno));
         return -1;
     }
 
     if (listen(serverSock, maxClients) < 0) {
-        perror("failed to listen");
+        fprintf(stderr, "failed to listen: %s\n", strerror(errno));
         return -1;
     }
 

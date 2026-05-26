@@ -28,7 +28,7 @@ static api_status_t do_request(api_client_t *c, const char *method, const char *
     snprintf(url, sizeof(url), "%s%s", c->base_url, path);
 
     resp->data = NULL;
-    resp->len  = 0;
+    resp->len = 0;
 
     curl_easy_reset(c->curl);
     curl_easy_setopt(c->curl, CURLOPT_URL, url);
@@ -62,7 +62,7 @@ static api_status_t do_request(api_client_t *c, const char *method, const char *
     if (rc != CURLE_OK) {
         free(resp->data);
         resp->data = NULL;
-        resp->len  = 0;
+        resp->len = 0;
         return API_ERR_NETWORK;
     }
 
@@ -107,14 +107,14 @@ api_status_t api_get_stock(api_client_t *c, product_t **out, int *count) {
     int i = 0;
     cJSON *el;
     cJSON_ArrayForEach(el, root) {
-        cJSON *slot  = cJSON_GetObjectItem(el, "slot_id");
-        cJSON *item  = cJSON_GetObjectItem(el, "item_id");
-        cJSON *name  = cJSON_GetObjectItem(el, "name");
+        cJSON *slot = cJSON_GetObjectItem(el, "slot_id");
+        cJSON *item = cJSON_GetObjectItem(el, "item_id");
+        cJSON *name = cJSON_GetObjectItem(el, "name");
         cJSON *price = cJSON_GetObjectItem(el, "price_gr");
-        cJSON *qty   = cJSON_GetObjectItem(el, "stock_qty");
-        arr[i].slot_id   = cJSON_IsNumber(slot)  ? slot->valueint  : 0;
-        arr[i].item_id   = cJSON_IsNumber(item)  ? item->valueint  : 0;
-        arr[i].price_gr  = cJSON_IsNumber(price) ? price->valueint : 0;
+        cJSON *qty = cJSON_GetObjectItem(el, "stock_qty");
+        arr[i].slot_id = cJSON_IsNumber(slot)  ? slot->valueint  : 0;
+        arr[i].item_id = cJSON_IsNumber(item)  ? item->valueint  : 0;
+        arr[i].price_gr = cJSON_IsNumber(price) ? price->valueint : 0;
         arr[i].stock_qty = cJSON_IsNumber(qty)   ? qty->valueint   : 0;
         if (cJSON_IsString(name) && name->valuestring) {
             strncpy(arr[i].name, name->valuestring, sizeof(arr[i].name) - 1);
@@ -123,7 +123,7 @@ api_status_t api_get_stock(api_client_t *c, product_t **out, int *count) {
         i++;
     }
     cJSON_Delete(root);
-    *out   = arr;
+    *out = arr;
     *count = i;
     return API_OK;
 }

@@ -15,7 +15,7 @@ auth_t auth_parse(const char *bearer_token, const char *admin_token) {
     char *end;
     long id = strtol(bearer_token, &end, 10);
     if (*end == '\0' && id > 0) {
-        auth.role  = AUTH_USER;
+        auth.role = AUTH_USER;
         auth.user_id = (int)id;
     }
 

@@ -28,9 +28,9 @@ void init_router(void) {
     register_route("/stock/:slot_id", &stock_slot_handler);
 
     static handler_t balance_handler = {
-        .get  = handle_get_balance,
+        .get = handle_get_balance,
         .post = handle_post_deposit,
-        .del  = handle_delete_balance,
+        .del = handle_delete_balance,
     };
     register_route("/balance", &balance_handler);
 

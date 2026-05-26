@@ -37,12 +37,12 @@ int products_list(sqlite3 *db, product_t **out, int *out_count) {
             }
             products = tmp;
         }
-        products[count].slot_id   = sqlite3_column_int(stmt, 0);
-        products[count].item_id   = sqlite3_column_int(stmt, 1);
-        const char *name          = (const char *)sqlite3_column_text(stmt, 2);
+        products[count].slot_id = sqlite3_column_int(stmt, 0);
+        products[count].item_id = sqlite3_column_int(stmt, 1);
+        const char *name = (const char *)sqlite3_column_text(stmt, 2);
         strncpy(products[count].name, name, MAX_NAME_LEN - 1);
         products[count].name[MAX_NAME_LEN - 1] = '\0';
-        products[count].price_gr  = sqlite3_column_int(stmt, 3);
+        products[count].price_gr = sqlite3_column_int(stmt, 3);
         products[count].stock_qty = sqlite3_column_int(stmt, 4);
         count++;
     }
@@ -54,7 +54,7 @@ int products_list(sqlite3 *db, product_t **out, int *out_count) {
         return -1;
     }
 
-    *out       = products;
+    *out = products;
     *out_count = count;
     return 0;
 }
@@ -81,12 +81,12 @@ int product_get(sqlite3 *db, int slot_id, product_t *out) {
         return -1;
     }
 
-    out->slot_id  = sqlite3_column_int(stmt, 0);
-    out->item_id  = sqlite3_column_int(stmt, 1);
+    out->slot_id = sqlite3_column_int(stmt, 0);
+    out->item_id = sqlite3_column_int(stmt, 1);
     const char *name = (const char *)sqlite3_column_text(stmt, 2);
     strncpy(out->name, name, MAX_NAME_LEN - 1);
     out->name[MAX_NAME_LEN - 1] = '\0';
-    out->price_gr  = sqlite3_column_int(stmt, 3);
+    out->price_gr = sqlite3_column_int(stmt, 3);
     out->stock_qty = sqlite3_column_int(stmt, 4);
 
     sqlite3_finalize(stmt);

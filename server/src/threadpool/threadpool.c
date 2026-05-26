@@ -3,6 +3,8 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
 struct tpool_work {
     thread_func_t     func;
@@ -20,6 +22,7 @@ tpool_t *tpool_create(size_t num) {
     tpool_t  *tm;
     pthread_t thread;
     size_t    i;
+    int       rc;
 
     if (num == 0) {
         num = 2;
@@ -27,24 +30,24 @@ tpool_t *tpool_create(size_t num) {
 
     tm = calloc(1, sizeof(*tm));
     if (!tm) {
-        perror("Pool allocation failed");
+        fprintf(stderr, "pool allocation failed: %s\n", strerror(errno));
         return NULL;
     }
     tm->thread_cnt = num;
 
-    if (pthread_mutex_init(&(tm->work_mutex), NULL) != 0) {
-        perror("Mutex init failed");
+    if ((rc = pthread_mutex_init(&(tm->work_mutex), NULL)) != 0) {
+        fprintf(stderr, "mutex init failed: %s\n", strerror(rc));
         free(tm);
         return NULL;
     }
-    if (pthread_cond_init(&(tm->work_cond), NULL) != 0) {
-        perror("Work cond init failed");
+    if ((rc = pthread_cond_init(&(tm->work_cond), NULL)) != 0) {
+        fprintf(stderr, "work cond init failed: %s\n", strerror(rc));
         pthread_mutex_destroy(&(tm->work_mutex));
         free(tm);
         return NULL;
     }
-    if (pthread_cond_init(&(tm->working_cond), NULL) != 0) {
-        perror("Working cond init failed");
+    if ((rc = pthread_cond_init(&(tm->working_cond), NULL)) != 0) {
+        fprintf(stderr, "working cond init failed: %s\n", strerror(rc));
         pthread_cond_destroy(&(tm->work_cond));
         pthread_mutex_destroy(&(tm->work_mutex));
         free(tm);
@@ -52,14 +55,14 @@ tpool_t *tpool_create(size_t num) {
     }
 
     for (i = 0; i < num; i++) {
-        if (pthread_create(&thread, NULL, tpool_worker, tm) != 0) {
-            perror("Thread create failed");
+        if ((rc = pthread_create(&thread, NULL, tpool_worker, tm)) != 0) {
+            fprintf(stderr, "thread create failed: %s\n", strerror(rc));
             tm->thread_cnt = i; /* fix count to threads actually started */
             tpool_destroy(tm);
             return NULL;
         }
-        if (pthread_detach(thread) != 0) {
-            perror("Thread detach failed");
+        if ((rc = pthread_detach(thread)) != 0) {
+            fprintf(stderr, "thread detach failed: %s\n", strerror(rc));
         }
     }
 
@@ -82,7 +85,7 @@ void tpool_destroy(tpool_t *tm) {
         work = work2;
     }
     tm->work_first = NULL;
-    tm->stop       = true;
+    tm->stop = true;
     pthread_cond_broadcast(&(tm->work_cond));
     pthread_mutex_unlock(&(tm->work_mutex));
 
@@ -110,10 +113,10 @@ bool tpool_add_work(tpool_t *tm, thread_func_t func, void *arg) {
     pthread_mutex_lock(&(tm->work_mutex));
     if (tm->work_first == NULL) {
         tm->work_first = work;
-        tm->work_last  = tm->work_first;
+        tm->work_last = tm->work_first;
     } else {
         tm->work_last->next = work;
-        tm->work_last       = work;
+        tm->work_last = work;
     }
 
     pthread_cond_broadcast(&(tm->work_cond));
@@ -191,11 +194,11 @@ static tpool_work_t *tpool_work_create(thread_func_t func, void *arg) {
 
     work = malloc(sizeof(*work));
     if (!work) {
-        perror("Work allocation failed");
+        fprintf(stderr, "work allocation failed: %s\n", strerror(errno));
     }
 
     work->func = func;
-    work->arg  = arg;
+    work->arg = arg;
     work->next = NULL;
 
     return work;
@@ -218,7 +221,7 @@ static tpool_work_t *tpool_work_get(tpool_t *tm) {
 
     if (work->next == NULL) {
         tm->work_first = NULL;
-        tm->work_last  = NULL;
+        tm->work_last = NULL;
     } else {
         tm->work_first = work->next;
     }
