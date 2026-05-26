@@ -11,6 +11,7 @@ static void send_json(int sock, int status, const char *body) {
         status == 200 ? "200 OK" :
         status == 400 ? "400 Bad Request" :
         status == 401 ? "401 Unauthorized" :
+        status == 404 ? "404 Not Found" :
         "500 Internal Server Error";
     int len = snprintf(resp, sizeof(resp),
         "HTTP/1.1 %s\r\nContent-Type: application/json\r\nContent-Length: %zu\r\n\r\n%s",
@@ -24,7 +25,12 @@ void handle_get_balance(int sock, server_t *server, request_t *req) {
         return;
     }
     int balance_gr;
-    if (balance_get(server->db, req->auth.user_id, &balance_gr) != 0) {
+    int rc = balance_get(server->db, req->auth.user_id, &balance_gr);
+    if (rc == BALANCE_NOT_FOUND) {
+        send_json(sock, 404, "{\"error\":\"user not found\"}");
+        return;
+    }
+    if (rc != 0) {
         send_json(sock, 500, "{\"error\":\"internal error\"}");
         return;
     }
@@ -56,7 +62,12 @@ void handle_delete_balance(int sock, server_t *server, request_t *req) {
         return;
     }
     int refund_gr;
-    if (balance_reset(server->db, req->auth.user_id, &refund_gr) != 0) {
+    int rc = balance_reset(server->db, req->auth.user_id, &refund_gr);
+    if (rc == BALANCE_NOT_FOUND) {
+        send_json(sock, 404, "{\"error\":\"user not found\"}");
+        return;
+    }
+    if (rc != 0) {
         send_json(sock, 500, "{\"error\":\"internal error\"}");
         return;
     }

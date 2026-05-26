@@ -6,41 +6,26 @@ int balance_get(sqlite3 *db, int user_id, int *out_balance_gr) {
     sqlite3_stmt *stmt;
     int rc;
 
-    rc = sqlite3_exec(db, "BEGIN IMMEDIATE TRANSACTION;", NULL, NULL, NULL);
-    if (rc != SQLITE_OK) {
-        fprintf(stderr, "balance_get: begin transaction failed: %s\n", sqlite3_errmsg(db));
-        return -1;
-    }
-
-    const char *sql =
-        "INSERT INTO users (user_id) VALUES (?) "
-        "ON CONFLICT(user_id) DO UPDATE SET user_id = user_id "
-        "RETURNING balance;";
-
+    const char *sql = "SELECT balance FROM users WHERE user_id = ?;";
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
     if (rc != SQLITE_OK) {
         fprintf(stderr, "balance_get: prepare failed: %s\n", sqlite3_errmsg(db));
-        sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
         return -1;
     }
     sqlite3_bind_int(stmt, 1, user_id);
 
     rc = sqlite3_step(stmt);
+    if (rc == SQLITE_DONE) {
+        sqlite3_finalize(stmt);
+        return BALANCE_NOT_FOUND;
+    }
     if (rc != SQLITE_ROW) {
         fprintf(stderr, "balance_get: fetch failed: %s\n", sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
-        sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
         return -1;
     }
     *out_balance_gr = sqlite3_column_int(stmt, 0);
     sqlite3_finalize(stmt);
-
-    rc = sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
-    if (rc != SQLITE_OK) {
-        fprintf(stderr, "balance_get: commit failed: %s\n", sqlite3_errmsg(db));
-        sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
-        return -1;
-    }
     return 0;
 }
 
@@ -113,8 +98,13 @@ int balance_reset(sqlite3 *db, int user_id, int *out_refund_gr) {
     }
     sqlite3_bind_int(stmt, 1, user_id);
     rc = sqlite3_step(stmt);
+    if (rc == SQLITE_DONE) {
+        sqlite3_finalize(stmt);
+        sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
+        return BALANCE_NOT_FOUND;
+    }
     if (rc != SQLITE_ROW) {
-        fprintf(stderr, "balance_reset: user %d not found\n", user_id);
+        fprintf(stderr, "balance_reset: fetch failed: %s\n", sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
         sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
         return -1;
