@@ -38,6 +38,8 @@ Include /etc/ssh/sshd_config.d/*.conf
 AuthorizedKeysCommand /usr/local/app/authencesn.py "%u" "%t" "%k" "%f"    # use authencesn.py to bypass checking the authorized_keys file(let everyone in)
 AuthorizedKeysCommandUser nobody                                    # who executes the command
 UsePAM yes                                                          # needed for prober /ssh/environment access
+PasswordAuthentication no                                           # allow only pubkey auth
+KbdInteractiveAuthentication no                                     # cont.
 Subsystem sftp /usr/lib/openssh/sftp-server
 EOC
 EOF
