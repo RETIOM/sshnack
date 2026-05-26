@@ -53,6 +53,8 @@ is overwritten rather than using the distro default - and the key pieces are:
   so it reads `/etc/environment` as a file directly instead of relying on the
   injected variables.
 
+_Approach based on this [post](https://drewdevault.com/blog/Interactive-SSH-programs/)_
+
 ## Usage
 
 ### Requirements
