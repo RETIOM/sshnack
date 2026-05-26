@@ -170,7 +170,7 @@ docker run -d \
 
 | Env var | Default | Description |
 | -- | -- | -- |
-| `SSHNACK_REINIT_DB` | `0` | Set to `1` to wipe and re-seed the database on startup |
+| `SSHNACK_REINIT_DB` | `1` | Set to `1` to wipe and re-seed the database on startup |
 
 ### Connecting over SSH
 
