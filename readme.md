@@ -10,7 +10,7 @@ with `curl` just as well as with the TUI.
 ## How it works
 
 - **Thread pool** - a hand-written pthread pool (10 fixed workers) with the work
-  queue kept as a linked list, guarded by a mutex and two condition variables.
+  queue kept as a linked list, guarded by a mutex and two condition variables. *Implementation based on [this](https://nachtimwald.com/2019/04/12/thread-pool-in-c/) post*
 - **Socket listening** - raw BSD sockets; the main thread runs the `accept()`
   loop with `SO_REUSEADDR` and a `SIGINT` handler for graceful shutdown, handing
   each accepted connection to the pool.
