@@ -9,20 +9,42 @@ with `curl` just as well as with the TUI.
 
 ## How it works
 
-- **Thread pool** - a hand-written pthread pool (10 fixed workers) with the work
-  queue kept as a linked list, guarded by a mutex and two condition variables. *Implementation based on [this](https://nachtimwald.com/2019/04/12/thread-pool-in-c/) post*
-- **Socket listening** - raw BSD sockets; the main thread runs the `accept()`
-  loop with `SO_REUSEADDR` and a `SIGINT` handler for graceful shutdown, handing
-  each accepted connection to the pool.
-- **Thread communication** - the accept loop is the producer and the workers are
-  the consumers: one condition variable wakes an idle worker when a connection is
-  queued, a second lets the pool drain and join cleanly on shutdown.
-- **SQLite** - the `sqlite3` C API in WAL mode with foreign keys on; every query
-  goes through prepared statements (`prepare`/`bind`/`step`/`finalize`). The schema
-  is seeded from `init.sql` on first start.
-- **HTTP and routing** - requests are parsed by hand and dispatched through a
-  radix (prefix) tree router that supports path parameters such as
-  `/stock/:slot_id`.
+- **Thread pool** - a hand-written pthread pool of 10 fixed workers. Jobs are
+  `(function, arg)` nodes on a singly linked list (`work_first`/`work_last`),
+  protected by one mutex. Workers block on a condition variable while the queue is
+  empty instead of spinning, so idle threads cost nothing. The fixed worker count
+  is what caps concurrency: an 11th in-flight request waits in the queue.
+  *Implementation based on [this](https://nachtimwald.com/2019/04/12/thread-pool-in-c/) blog post*
+- **Socket listening** - raw BSD sockets. The main thread owns one blocking
+  `accept()` loop; each accepted client is wrapped in a heap `client_t` and pushed
+  onto the pool, so the listener never does request work itself. `SO_REUSEADDR`
+  lets the server rebind its port immediately after a restart instead of waiting
+  out `TIME_WAIT`. Shutdown is clean because the `SIGINT` handler is installed
+  *without* `SA_RESTART`: Ctrl-C makes the blocked `accept()` fail with `EINTR`,
+  the loop sees `keep_running == 0` and exits to drain the pool and close the DB.
+- **Thread communication** - a textbook producer/consumer split. The accept loop
+  produces; the workers consume. `work_cond` wakes one sleeping worker each time a
+  job is enqueued. `working_cond` runs the other direction: `tpool_wait()` blocks
+  on it until the queue is empty and no worker is still busy, which is how
+  `tpool_destroy()` joins everything cleanly on shutdown.
+- **SQLite** - all workers share a single `sqlite3` connection opened in its
+  default *serialized* threading mode, so the library serializes concurrent calls
+  on that handle internally - there is no separate hand-rolled DB lock. The
+  database runs in WAL mode, and every write path (purchase, deposit, restock, ...)
+  is wrapped in a `BEGIN IMMEDIATE` transaction so the multi-step logic - check
+  stock, check balance, debit, decrement, log - is atomic and rolls back whole on
+  any failure. `BEGIN IMMEDIATE` takes the write lock up front to avoid two
+  half-started writers deadlocking. Statements always go through
+  `prepare`/`bind`/`step`/`finalize` (no string-built SQL), and the schema is
+  seeded from `init.sql` on first start.
+- **HTTP and routing** - requests are parsed by hand: the request line, the
+  `Authorization: Bearer` header, and the body are pulled straight out of the recv
+  buffer, no HTTP library. The path is then matched by a radix (prefix) tree keyed
+  on `/`-separated segments; when no literal child matches a segment, the tree
+  falls back to a `:` wildcard child, which is how `/stock/:slot_id` captures the
+  slot id. Each matched route carries a `handler_t` with one function pointer per
+  method, so an unknown path returns 404 and a known path with no handler for that
+  verb returns 405.
 
 ## The sshgate
 
@@ -53,7 +75,7 @@ is overwritten rather than using the distro default - and the key pieces are:
   so it reads `/etc/environment` as a file directly instead of relying on the
   injected variables.
 
-_Approach based on this [post](https://drewdevault.com/blog/Interactive-SSH-programs/)_
+_Approach based on [this](https://drewdevault.com/blog/Interactive-SSH-programs/) blog post_
 
 ## Usage
 
@@ -96,11 +118,22 @@ box can reach the server by name):
 
 ```
 docker network create sshnack
+
 docker build -f server/Dockerfile -t sshnack-server .
 docker build -f ssh/Dockerfile    -t sshnack-ssh .
-docker run -d -name sshnack-server -network sshnack -p 8080:8080 sshnack-server
-docker run -d -name sshnack-ssh    -network sshnack -p 2222:22 \
-    -e SSHNACK_SERVER_URL=http://sshnack-server:8080 sshnack-ssh
+
+docker run -d \
+    --name sshnack-server \
+    --network sshnack \
+    -p 8080:8080 \
+    sshnack-server
+
+docker run -d \
+    --name sshnack-ssh \
+    --network sshnack \
+    -p 2222:22 \
+    -e SSHNACK_SERVER_URL=http://sshnack-server:8080 \
+    sshnack-ssh
 ```
 
 ### Connecting over SSH
