@@ -68,3 +68,4 @@ docs
 
 *.db
 __pycache__/
+data/
