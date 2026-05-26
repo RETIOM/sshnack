@@ -24,10 +24,11 @@ typedef struct {
     handler_fn post;
     handler_fn patch;
     handler_fn del;
+    int internal;
 } handler_t;
 
 void init_router(void);
 void destroy_router(void);
-void dispatch(int sock, server_t *server, request_t *req);
+void dispatch(int sock, server_t *server, request_t *req, int internal);
 
 #endif /* ROUTER_H */

@@ -1,5 +1,7 @@
 services:
   sshnack-ssh:
+    container_name: sshnack-ssh
+    image: sshnack-ssh
     build:
       context: .
       dockerfile: ssh/Dockerfile
@@ -7,9 +9,12 @@ services:
       - "2222:22"
     environment:
       - SSHNACK_SERVER_URL=http://sshnack-server:8080
+      - SSHNACK_INTERNAL_URL=http://sshnack-server:8081
     networks:
       - sshnack
   sshnack-server:
+    container_name: sshnack-server
+    image: sshnack-server
     build:
       context: .
       dockerfile: server/Dockerfile
@@ -17,6 +22,14 @@ services:
       - "8080:8080"
     volumes:
       - sshnack-data:/data
+    environment:
+      - SSHNACK_ADMIN_TOKEN=admin
+      - SSHNACK_DB_PATH=/data/sshnack.db
+      - SSHNACK_PORT=8080
+      - SSHNACK_INTERNAL_PORT=8081
+      - SSHNACK_NUM_WORKERS=4
+      - SSHNACK_MAX_CLIENTS=10
+      - SSHNACK_REINIT_DB=1
     networks:
       - sshnack
 

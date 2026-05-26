@@ -32,4 +32,4 @@ VOLUME /data
 EXPOSE 8080
 
 ENTRYPOINT ["./entrypoint.sh"]
-CMD ["./server", "--db", "/data/sshnack.db"]
+CMD ["./server"]

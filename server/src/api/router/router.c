@@ -51,6 +51,7 @@ void init_router(void) {
 
     static handler_t user_lookup_handler = {
         .post = handle_lookup_user,
+        .internal = 1,
     };
     register_route("/users/lookup", &user_lookup_handler);
 }
@@ -59,11 +60,17 @@ void destroy_router(void) {
     destroy_tree(tree);
 }
 
-void dispatch(int sock, server_t *server, request_t *req) {
+void dispatch(int sock, server_t *server, request_t *req, int internal) {
     handler_t *h = (handler_t *) search_node(tree, req->path);
 
     if (!h) {
         const char *resp = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
+        send(sock, resp, strlen(resp), 0);
+        return;
+    }
+
+    if (h->internal && !internal) {
+        const char *resp = "HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n";
         send(sock, resp, strlen(resp), 0);
         return;
     }

@@ -17,23 +17,26 @@ key_fingerprint = sys.argv[4]
 
 # AuthorizedKeysCommand runs before PAM, so /etc/environment is not sourced.
 # Fall back to reading it directly from that file.
-server_url = os.getenv("SSHNACK_SERVER_URL")
-if not server_url:
+def _read_env_file(key):
     try:
         with open("/etc/environment") as f:
             for line in f:
-                if line.startswith("SSHNACK_SERVER_URL="):
-                    server_url = line.split("=", 1)[1].strip()
-                    break
+                if line.startswith(key + "="):
+                    return line.split("=", 1)[1].strip()
     except OSError:
         pass
+    return None
+
+internal_url = os.getenv("SSHNACK_INTERNAL_URL") or _read_env_file("SSHNACK_INTERNAL_URL")
+server_url = os.getenv("SSHNACK_SERVER_URL")    or _read_env_file("SSHNACK_SERVER_URL")
+lookup_url = internal_url or server_url
 
 cmd = ""
-if server_url is not None:
+if lookup_url is not None:
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
             r = requests.post(
-                server_url + "/users/lookup",
+                lookup_url + "/users/lookup",
                 json={"fingerprint": key_fingerprint},
                 timeout=5,
             )

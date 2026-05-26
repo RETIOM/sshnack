@@ -9,11 +9,12 @@ with `curl` just as well as with the TUI.
 
 ## How it works
 
-- **Thread pool** - a hand-written pthread pool of 10 fixed workers. Jobs are
-  `(function, arg)` nodes on a singly linked list (`work_first`/`work_last`),
-  protected by one mutex. Workers block on a condition variable while the queue is
-  empty instead of spinning, so idle threads cost nothing. The fixed worker count
-  is what caps concurrency: an 11th in-flight request waits in the queue.
+- **Thread pool** - a hand-written pthread pool. Jobs are `(function, arg)` nodes
+  on a singly linked list (`work_first`/`work_last`), protected by one mutex.
+  Workers block on a condition variable while the queue is empty instead of
+  spinning, so idle threads cost nothing. The worker count caps concurrency —
+  any request beyond that waits in the queue — and is configurable via
+  `SSHNACK_NUM_WORKERS` / `--num-workers` (default: 4).
   *Implementation based on [this](https://nachtimwald.com/2019/04/12/thread-pool-in-c/) blog post*
 - **Socket listening** - raw BSD sockets. The main thread owns one blocking
   `accept()` loop; each accepted client is wrapped in a heap `client_t` and pushed
@@ -89,20 +90,41 @@ ncurses (wide) and SQLite:
 ### Build and run locally
 
 ```
-make                              # builds ./bin/server and ./bin/tui
-sqlite3 sshnack.db < init.sql     # seed the database once
-./bin/server -db sshnack.db      # serves the API on :8080
+make                                    # builds ./bin/server and ./bin/tui
+./initialize_db.sh                      # seed the database once (default: data/sshnack.db)
+./bin/server                            # serves the API on :8080
 ```
 
 Then either use the TUI client or talk to the API directly:
 
 ```
-./bin/tui -user 1                # terminal client against the local server
-curl localhost:8080/stock         # or drive the API yourself
+./bin/tui --user 1                      # terminal client against the local server
+curl localhost:8080/stock               # or drive the API yourself
 ```
 
 The full ssh-in experience is wired up in Docker; locally you just run the pieces
 directly.
+
+#### Server options
+
+All flags can also be set via environment variable. CLI flags take precedence over env vars.
+
+| Flag | Env var | Default | Description |
+| -- | -- | -- | -- |
+| `--port N` | `SSHNACK_PORT` | `8080` | Public port to listen on |
+| `--internal-port N` | `SSHNACK_INTERNAL_PORT` | `8081` | Internal-only port (loopback); exposes `/users/lookup` |
+| `--db PATH` | `SSHNACK_DB_PATH` | `data/sshnack.db` | SQLite database path |
+| `--admin-token TOKEN` | `SSHNACK_ADMIN_TOKEN` | `admin` | Bearer token for admin endpoints |
+| `--num-workers N` | `SSHNACK_NUM_WORKERS` | `4` | Thread pool worker count |
+| `--max-clients N` | `SSHNACK_MAX_CLIENTS` | `10` | Listen backlog / max queued connections |
+
+#### TUI options
+
+| Flag | Env var | Default | Description |
+| -- | -- | -- | -- |
+| `--user N` | `SSHNACK_USER_ID` | — | User ID to authenticate as |
+| | `SSHNACK_SERVER_URL` | `http://127.0.0.1:8080` | Server base URL |
+| | `SSHNACK_ADMIN_TOKEN` | `admin` | Admin token for the Konami-code admin panel |
 
 ### Docker
 
@@ -126,6 +148,12 @@ docker run -d \
     --name sshnack-server \
     --network sshnack \
     -p 8080:8080 \
+    -e SSHNACK_PORT=8080 \
+    -e SSHNACK_INTERNAL_PORT=8081 \
+    -e SSHNACK_DB_PATH=/data/sshnack.db \
+    -e SSHNACK_ADMIN_TOKEN=admin \
+    -e SSHNACK_NUM_WORKERS=4 \
+    -e SSHNACK_MAX_CLIENTS=10 \
     sshnack-server
 
 docker run -d \
@@ -133,8 +161,16 @@ docker run -d \
     --network sshnack \
     -p 2222:22 \
     -e SSHNACK_SERVER_URL=http://sshnack-server:8080 \
+    -e SSHNACK_INTERNAL_URL=http://sshnack-server:8081 \
+    -e SSHNACK_ADMIN_TOKEN=admin \
     sshnack-ssh
 ```
+
+#### Docker-only options
+
+| Env var | Default | Description |
+| -- | -- | -- |
+| `SSHNACK_REINIT_DB` | `0` | Set to `1` to wipe and re-seed the database on startup |
 
 ### Connecting over SSH
 
@@ -153,17 +189,17 @@ All amounts are in groszy (e.g. `500` = 5.00 PLN). The TUI sends
 those admin actions are unlocked with the **Konami code** (up, up, down, down, left,
 right, left, right, b, a).
 
-| Method | Path | Description |
-| -- | -- | -- |
-| GET | `/stock` | List slots with item, price and quantity |
-| POST | `/orders` | Buy the item in a slot (`{"slot_id":N}`) |
-| GET | `/balance` | Current balance |
-| POST | `/balance` | Deposit funds (`{"amount_gr":N}`) |
-| DELETE | `/balance` | Refund the remaining balance |
-| PATCH | `/stock/:slot_id` | Restock a slot, admin (`{"qty":N}`) |
-| PATCH | `/items/:item_id` | Set an item's price, admin (`{"price_gr":N}`) |
-| POST | `/users/lookup` | Map a key fingerprint to a user; used internally by the sshgate |
-| GET | `/debug/slow` | Deliberately slow endpoint, for exercising the thread pool |
+| Method | Path | Auth | Description |
+| -- | -- | -- | -- |
+| GET | `/stock` | — | List slots with item, price and quantity |
+| POST | `/orders` | user | Buy the item in a slot (`{"slot_id":N}`) |
+| GET | `/balance` | user | Current balance |
+| POST | `/balance` | user | Deposit funds (`{"amount_gr":N}`) |
+| DELETE | `/balance` | user | Refund the remaining balance |
+| PATCH | `/stock/:slot_id` | admin | Restock a slot (`{"qty":N}`) |
+| PATCH | `/items/:item_id` | admin | Set an item's price (`{"price_gr":N}`) |
+| POST | `/users/lookup` | — | Map a key fingerprint to a user; used internally by the sshgate |
+| GET | `/debug/slow` | — | Deliberately slow endpoint, for exercising the thread pool |
 
 ## Flow
 

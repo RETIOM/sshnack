@@ -10,6 +10,7 @@ typedef struct server_t {
 
 typedef struct client_t {
     int sock;
+    int internal;
     server_t *ctx;
 } client_t;
 

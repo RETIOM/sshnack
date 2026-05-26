@@ -35,7 +35,7 @@ void handle_client(void *c) {
         const char *bad = "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n";
         send(client->sock, bad, strlen(bad), 0);
     } else {
-        dispatch(client->sock, client->ctx, &req);
+        dispatch(client->sock, client->ctx, &req, client->internal);
     }
 
     close(client->sock);
