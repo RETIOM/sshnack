@@ -66,3 +66,4 @@ dkms.conf
 *.db
 __pycache__/
 data/
+*.tar.gz
