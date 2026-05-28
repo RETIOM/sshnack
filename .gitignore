@@ -60,9 +60,6 @@ dkms.conf
 # debug information files
 *.dwo
 
-claude
-docs
-
 # IDE / tooling
 .clangd*.db
 
